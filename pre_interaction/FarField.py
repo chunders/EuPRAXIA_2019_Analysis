@@ -35,10 +35,11 @@ else:
 
 class focal_spot(): 
     #Takes the folder path and then the file name
-    def __init__(self, im, calculations = True,
+    def __init__(self, filepath, calculations = True,
                  backgroundImage = None, plot_raw_input = True):
         # The image should be a numpy array
-        self.im = im
+        self.filepath = filepath
+        self.load_image()
         if backgroundImage is not None:
             # Check that the image is a float before taking the background away
             self.im = np.float64(self.im) -  np.float64(np.array(backgroundImage))
@@ -50,6 +51,9 @@ class focal_spot():
             plt.imshow(self.im)
             plt.colorbar()
             plt.show()
+    
+    def load_image(self):
+        self.im = io.imread(self.filepath)            
                         
     def create_class_variables(self):
         self.imShape = np.shape(self.im)
@@ -271,17 +275,53 @@ class focal_spot():
 ### Example run script    
 if __name__ == "__main__":
 
-    folderPath = "/Volumes/GoogleDrive/My Drive/2019_Lund/Pre_plasma_diagnositc_calibration/"
+    # folderPath = "/Volumes/GoogleDrive/My Drive/2019_Lund/Pre_plasma_diagnositc_calibration/"
 
-    image = io.imread(folderPath  + "Far_field.tif")
+    # imagefilepath = folderPath  + "Far_field.tif"
 
-    fs = focal_spot(image, plot_raw_input = False)    
-    # fs.Peaklocator(True)
+    # fs = focal_spot(image, plot_raw_input = False)    
+    # # fs.Peaklocator(True)
 
-    umPerPixel = 2.575e-01
-    fit = fs.fit_2DGaus(umPerPixel, crop_pixels_around_peak = 250)
-    fs.createPlotWithLineOuts()
+    # umPerPixel = 2.575e-01
+    # fit = fs.fit_2DGaus(umPerPixel, crop_pixels_around_peak = 250)
+    # fs.createPlotWithLineOuts()
 
-    print ("Dictionary of fit params")
-    print (fit)
+    # print ("Dictionary of fit params")
+    # print (fit)
+ path_to_data = "/Volumes/Lund_York/"
+    date = "2019-11-15/"
+    run = "0001/"
+    diagnostic = "Farfield pre/"
+    # Load all the shot data
+    folder_path = path_to_data + date + run + diagnostic
+    filelist = func.FilesInFolder(folder_path, ".tif")
+    shots = func.SplitArr(filelist, "_", 1)
+    # Check that it is in order
+    filelist, shots = func.sortArrAbyB(filelist, shots)
+    
+    # Calibration details
+    umPerPixel = 2.575e-01 * 0.25
+    
+    out_dictionary = {}
+    for f in filelist[:]:
+        
+        print (f)
+        shot = f.split("_")[1]
+        filepath = folder_path + f
+        try:
+            fs = FarField.focal_spot(filepath, plot_raw_input = False)  
+            fit = fs.fit_2DGaus(umPerPixel, crop_pixels_around_peak = 250)
+        except ValueError:
+            print ("Fitting has gone wrong")
+            fit = {'amp': [np.nan, np.nan],
+                 'xc': [np.nan, np.nan],
+                 'yc': [np.nan, np.nan],
+                 'sigma_x': [np.nan, np.nan],
+                 'sigma_y': [np.nan, np.nan],
+                 'theta': [np.nan, np.nan],
+                 'offset': [np.nan, np.nan]}
+        out_dictionary[shot] = fit
+    func.saveDictionary(path_to_data + date + run + diagnostic[:-1].replace(" ", "_") + "_extraction.json",
+                        out_dictionary)
+        
 
