@@ -39,11 +39,8 @@ class focal_spot():
                  backgroundImage = None, plot_raw_input = True):
         # The image should be a numpy array
         self.filepath = filepath
-        self.load_image()
-        if backgroundImage is not None:
-            # Check that the image is a float before taking the background away
-            self.im = np.float64(self.im) -  np.float64(np.array(backgroundImage))
-            
+        self.load_image(backgroundImage)
+                    
         if calculations:
             self.create_class_variables()
             
@@ -53,7 +50,11 @@ class focal_spot():
             plt.show()
     
     def load_image(self):
-        self.im = io.imread(self.filepath)            
+        self.im = io.imread(self.filepath)    
+        if backgroundImage is not None:
+            # Check that the image is a float before taking the background away
+            self.im = np.float64(self.im) -  np.float64(np.array(backgroundImage))
+
                         
     def create_class_variables(self):
         self.imShape = np.shape(self.im)
@@ -288,7 +289,7 @@ if __name__ == "__main__":
 
     # print ("Dictionary of fit params")
     # print (fit)
- path_to_data = "/Volumes/Lund_York/"
+    path_to_data = "/Volumes/Lund_York/"
     date = "2019-11-15/"
     run = "0001/"
     diagnostic = "Farfield pre/"

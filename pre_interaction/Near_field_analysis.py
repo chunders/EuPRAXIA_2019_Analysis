@@ -24,12 +24,14 @@ import CUnderwood_Functions3 as func
 from skimage import io
 
 class near_field_analysis():
-    def __init__(self, filepath):
+    def __init__(self, filepath, background = None):
         self.filepath = filepath
-        self.load_image()
+        self.load_image(background)
         
-    def load_image(self):
+    def load_image(self, background):
         self.image = io.imread(self.filepath)
+        if background is not None:
+            self.image -= background
         
     def plot_image(self):
         plt.imshow(self.image)   
@@ -39,15 +41,73 @@ class near_field_analysis():
         
     def energy_in_beam(self ,energy_calibration):
         energy = np.sum(self.image) * energy_calibration
-        print ("Energy in near field", energy)
+        # print ("Energy in near field", energy)
         return energy
     
+def create_background(shot_numbers):
+    if False:
+        e = near_field_analysis( folderpath + filelist[0])
+        bg = np.zeros_like(e.image)
+    else:
+        bg = np.zeros((1200,1920))
     
+    for bgshot in shot_numbers:
+        index = np.where(bgshot == shots)[0][0]
+        print (index)
+        filepath = folder_path + filelist[index]
+        e = near_field_analysis(filepath)
+        bg += e.image
+    bg = bg/(len(shot_numbers))
+    return bg    
     
 if __name__ == "__main__":
-  folderPath = "/Volumes/GoogleDrive/My Drive/2019_Lund/Pre_plasma_diagnositc_calibration/"
-  nf = near_field_analysis(folderPath  + "Near_field.tif")
-  nf.crop_tblr(400, 1100, 700, 1600)
-  nf.plot_image()
+    path_to_data = "/Volumes/Lund_York/"
+    date = "2019-11-15/"
+    run = "0001/"
+    diagnostic = "Nearfield pre/"
+    tblr = [180, 1000, 380, 1280]
+    # diagnostic = "Nearfield post/"
+    # tblr = [None, None, None, None]
 
-nf.energy_in_beam(energy_calibration = 1)
+
+    # Load all the shot data
+    folder_path = path_to_data + date + run + diagnostic
+    filelist = func.FilesInFolder(folder_path, ".tif")
+    shots = func.SplitArr(filelist, "_", 1)
+    # Check that it is in order
+    filelist, shots = func.sortArrAbyB(filelist, shots)
+    
+    dark_field = create_background([4,167])
+    
+    
+    out_dictionary = {}
+    
+    for f in filelist:
+        shot = f.split("_")[1]
+        print (f, shot)
+        
+        nf = near_field_analysis(folder_path  + f, dark_field)
+        # nf.plot_image()
+        nf.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
+        # nf.plot_image()
+        
+        energy = nf.energy_in_beam(energy_calibration = 1)
+        out_dictionary[shot] = energy
+        
+    print("Finished Extraction")
+        
+    func.saveDictionary(path_to_data + date + run + diagnostic[:-1].replace(" ", "_") + "_extraction.json",
+                        out_dictionary)        
+    
+    shots = list(out_dictionary)
+    shots.sort()
+    shots_int = []
+    energy = []
+    for s in shots:
+        # if int(s) not in [4, 167]:        
+        shots_int.append(int(s))
+        energy.append(out_dictionary[s])
+    plt.plot(shots_int, energy, '.')
+    plt.ylabel("Laser energy (Arb Units)")
+    plt.xlabel("Shot Number")
+    func.saveFigure(path_to_data + date + "Evolution_of_laser_energy.png")
