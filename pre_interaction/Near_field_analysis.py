@@ -16,10 +16,9 @@ import matplotlib as mpl
 mpl.rcParams['figure.figsize'] = [8.0,6.0]
 import matplotlib.pyplot as plt
 
-# Load my module of functions
 import sys
-sys.path.insert(0, '/Users/chrisunderwood/Documents/Python/')
-import CUnderwood_Functions3 as func
+sys.path.append("..")
+import Functions3 as func
 
 from skimage import io
 
@@ -44,14 +43,12 @@ class near_field_analysis():
         # print ("Energy in near field", energy)
         return energy
     
-def create_background(shot_numbers):
-    if False:
-        e = near_field_analysis( folderpath + filelist[0])
-        bg = np.zeros_like(e.image)
-    else:
-        bg = np.zeros((1200,1920))
+def create_background(shot_numbers, shots):
+    # Create a blank image.
+    bg = np.zeros((1200,1920))
     
     for bgshot in shot_numbers:
+        print (bgshot)
         index = np.where(bgshot == shots)[0][0]
         print (index)
         filepath = folder_path + filelist[index]
@@ -62,13 +59,17 @@ def create_background(shot_numbers):
     
 if __name__ == "__main__":
     path_to_data = "/Volumes/Lund_York/"
-    date = "2019-11-15/"
+    date = "2019-11-26/"
     run = "0001/"
     diagnostic = "Nearfield pre/"
-    tblr = [180, 1000, 380, 1280]
-    # diagnostic = "Nearfield post/"
-    # tblr = [None, None, None, None]
-
+    crop_path = path_to_data + date + diagnostic[:-1].replace(" ", "_") + "_crop.txt"
+    if False:
+        # Create crop coors.
+        tblr = [160, 1050, 290, 1180]
+        # np.savetxt(crop_path, tblr)
+    else:
+        tblr = np.loadtxt(crop_path, dtype = float)
+        tblr = np.array(tblr, dtype = int)
 
     # Load all the shot data
     folder_path = path_to_data + date + run + diagnostic
@@ -77,12 +78,12 @@ if __name__ == "__main__":
     # Check that it is in order
     filelist, shots = func.sortArrAbyB(filelist, shots)
     
-    dark_field = create_background([4,167])
+    dark_field = create_background([1], shots)
     
     
     out_dictionary = {}
     
-    for f in filelist:
+    for f in filelist[:]:
         shot = f.split("_")[1]
         print (f, shot)
         
@@ -94,6 +95,7 @@ if __name__ == "__main__":
         energy = nf.energy_in_beam(energy_calibration = 1)
         out_dictionary[shot] = energy
         
+
     print("Finished Extraction")
         
     func.saveDictionary(path_to_data + date + run + diagnostic[:-1].replace(" ", "_") + "_extraction.json",
@@ -110,4 +112,8 @@ if __name__ == "__main__":
     plt.plot(shots_int, energy, '.')
     plt.ylabel("Laser energy (Arb Units)")
     plt.xlabel("Shot Number")
+    plt.title(date[:-1] + " run:" + run[:-1])
     func.saveFigure(path_to_data + date + "Evolution_of_laser_energy.png")
+
+
+    

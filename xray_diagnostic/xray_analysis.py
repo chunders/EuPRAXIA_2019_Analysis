@@ -16,10 +16,9 @@ import matplotlib as mpl
 mpl.rcParams['figure.figsize'] = [8.0,6.0]
 import matplotlib.pyplot as plt
 
-# Load my module of functions
 import sys
-sys.path.insert(0, '/Users/chrisunderwood/Documents/Python/')
-import CUnderwood_Functions3 as func
+sys.path.append("..")
+import Functions3 as func
 
 from scipy.signal import medfilt2d, convolve2d
 from skimage import io, draw

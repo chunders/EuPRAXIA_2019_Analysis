@@ -21,10 +21,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.gridspec as gridspec
 from scipy.optimize import curve_fit
-# Load my module of functions
+
 import sys
-sys.path.insert(0, '/Users/chrisunderwood/Documents/Python/')
-import CUnderwood_Functions3 as func
+sys.path.append("..")
+import Functions3 as func
 
 imageRead = True
 if imageRead:
