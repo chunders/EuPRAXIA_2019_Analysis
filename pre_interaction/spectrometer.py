@@ -134,6 +134,7 @@ if __name__ == "__main__":
     ## If plotting each spectrum uncomment.
     #     spec.plot_spectrum_with_label()
     # plt.legend()
+    # plt.xlim([770, 830])
     # plt.show()
     
 
@@ -151,6 +152,10 @@ if __name__ == "__main__":
     plt.pcolormesh(wavelength, data_shots,
                    hm)
     plt.colorbar()
+    plt.xlabel("Wavelength (nm)")
+    plt.ylabel("Shot Number")
+    plt.xlim([770, 830])
+    
     plt.show()
     
     # g = select_Gaus_fit(wavelength, 1000 + np.array(hm[-1]), plottingOnOff=True,

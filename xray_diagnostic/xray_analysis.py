@@ -59,10 +59,11 @@ class xray_analysis():
         if background is not None:
             self.image -= background
         
-    def plot_image(self):
-        plt.imshow(self.image)   
+    def plot_image(self, vmin = None, vmax = None, show = True):
+        plt.imshow(self.image, vmin = vmin, vmax = vmax)   
         plt.colorbar()
-        plt.show()
+        if show:
+            plt.show()
         
     def crop_tblr(self, bot, top, left, right):
         self.image = self.image[bot: top, left: right]
@@ -107,7 +108,8 @@ def circles_from_p1p2r(p1, p2, r):
     # dist between points
     q = (dx**2 + dy**2)**0.5
     if q > 2.0*r:
-        raise ValueError('separation of points > diameter')
+        print ()
+        raise ValueError('separation of points > diameter \n'+"Min Radius = {}".format(q/2))
     # halfway point
     x3, y3 = (x1+x2)/2, (y1+y2)/2
     # distance along the mirror line
@@ -122,8 +124,8 @@ def circles_from_p1p2r(p1, p2, r):
              r = abs(r))
     return c1, c2    
 
-def create_mask_outline(p1, p2, r):
-    mask = np.zeros((tblr[1]-tblr[0], tblr[3]-tblr[2]))    
+def create_mask_outline(p1, p2, r, shape):
+    mask = np.zeros(shape)    
     c1, c2 = circles_from_p1p2r(p1, p2, r)  
     for i, c in enumerate( [c1, c2] ):
         rr, cc = draw.circle(c.x, c.y, radius= float(c.r) + i * -10,
@@ -145,12 +147,22 @@ def enlarge_mask_for_background(mask_ones, size = (20,20)):
 
 if __name__ == "__main__":
     path_to_data = "/Volumes/Lund_York/"
-    date = "2019-11-15/"
-    run = "0001/"
+    date = "2019-11-27/"
+    run = "0004/"
     diagnostic = "Xray/"
     
     # Cropping to the image.
-    tblr = [680, 1200, 500, 1000]
+    crop_path = path_to_data + date + diagnostic[:-1].replace(" ", "_") + "_crop.txt"
+    if True:
+        # Create crop coors.
+        tblr = [300, 1350, 750, 1700]
+        topLeft = (441, 1558)
+        botRight = (1344, 841)
+        wedgeRadius = 670
+        # np.savetxt(crop_path, tblr)
+    else:
+        tblr = np.loadtxt(crop_path, dtype = float)
+        tblr = np.array(tblr, dtype = int)    
 
     
     # Load all the shot data
@@ -160,34 +172,57 @@ if __name__ == "__main__":
     # Check that it is in order
     filelist, shots = func.sortArrAbyB(filelist, shots)    
     
-    
-    
-    bg =  xray_analysis(folder_path + "0001_0296_Xray.tif")
-    bg.crop_tblr(1000, None, 1000, None)
-    bg.image = medfilt2d(bg.image, 11)
-    plt.title("Background")
-    bg.plot_image()
- 
-    background = np.average(bg.image)
+    if False:
+    # =============================================================================
+    #     Create background 
+    # =============================================================================
+        # dark_field = create_background([4,167])
+        bg_file_path1 = "/Volumes/Lund_York/2019-11-27/0004/Xray/0004_0003_Xray.tif"
+        bg_file_path2 = "/Volumes/Lund_York/2019-11-27/0004/Xray/0004_0047_Xray.tif"    
+        bg_files = [bg_file_path1, bg_file_path2]
+        dark_field = np.zeros((2048, 2048))
+        for file in bg_files:
+            bg1 =  xray_analysis(bg_file_path1)
+            bg.image = medfilt2d(bg.image, 11)    
+            dark_field += bg.image
+        dark_field = dark_field / len(bg_files)
+        if False:
+            plt.title("Background")
+            plt.imshow(dark_field, vmin = np.average(dark_field))
+            plt.show()
+        np.savetxt(path_to_data + date + "Xray_dark_field.txt", dark_field) 
+    else:
+        dark_field = np.loadtxt(path_to_data + date + "Xray_dark_field.txt")
 
 
+    if False:
+        # =============================================================================
+        #     create mask
+        # =============================================================================
+        xr = xray_analysis(folder_path  + filelist[-1], 
+                            darkfield = dark_field
+                           )
+        # min_cmap = np.average(xr.image)
+        mask = create_mask_outline(topLeft, botRight, wedgeRadius, np.shape(xr.image))
+        mask_bg = enlarge_mask_for_background(mask)
     
-    # dark_field = create_background([4,167])
-    
-# =============================================================================
-#     create mask
-# =============================================================================
-    mask = create_mask_outline((453, 136), (50, 412), 295)
-    mask_bg = enlarge_mask_for_background(mask)
-    
-    plt.imshow(mask, alpha = 0.4, cmap = 'Blues') 
-    plt.imshow(mask_bg, alpha = 0.3, cmap = 'Reds')
-    plt.title("Masks")
-    plt.show()
-    
+        xr.plot_image(vmin=None, show = False)
+        plt.imshow(mask, alpha = 0.2, cmap = 'Blues')     
+        plt.imshow(mask_bg, alpha = 0.15, cmap = 'Reds')
+        plt.title("Masks")
+        plt.xlim([tblr[2], tblr[3]])
+        plt.ylim([tblr[1], tblr[0]])    
+        plt.show()
+        np.savetxt(path_to_data + date + "Xray_mask.txt", mask,fmt = '%d')
+        np.savetxt(path_to_data + date + "Xray_mask_bg.txt", mask_bg, fmt = '%d')   
+    else:
+        mask = np.loadtxt(path_to_data + date + "Xray_mask.txt", dtype = int)
+        mask_bg = np.loadtxt(path_to_data + date + "Xray_mask_bg.txt", dtype = int)    
 
-    xr = xray_analysis(folder_path  + f, darkfield = background)
-    xr.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
+    # xr.plot_image(vmin=min_cmap)
+    
+    # xr.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
+    # xr.plot_image(vmin=min_cmap)
     # xr.image = medfilt2d(xr.image, 5)
 
 
@@ -201,7 +236,7 @@ if __name__ == "__main__":
 
     out_dictionary = {}
     
-    for f in filelist[:3]:
+    for f in filelist[:]:
         shot = f.split("_")[1]
         print (f, shot)
         
@@ -228,7 +263,7 @@ if __name__ == "__main__":
         # see how close to single hit we are?
 
     
-'''        
+       
     func.saveDictionary(path_to_data + date + run + diagnostic[:-1].replace(" ", "_") + "_extraction.json",
                         out_dictionary)        
     
@@ -244,5 +279,5 @@ if __name__ == "__main__":
     plt.ylabel("Laser energy (Arb Units)")
     plt.xlabel("Shot Number")
     func.saveFigure(path_to_data + date + "Evolution_of_laser_energy.png")
-'''
+# '''
     

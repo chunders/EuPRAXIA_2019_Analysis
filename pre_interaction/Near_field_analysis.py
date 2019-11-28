@@ -58,14 +58,15 @@ def create_background(shot_numbers, shots):
     return bg    
     
 if __name__ == "__main__":
+    dark_field_path = "/Volumes/Lund_York/Dark_fields/"
     path_to_data = "/Volumes/Lund_York/"
     date = "2019-11-26/"
-    run = "0001/"
+    run = "0004/"
     diagnostic = "Nearfield pre/"
     crop_path = path_to_data + date + diagnostic[:-1].replace(" ", "_") + "_crop.txt"
     if False:
         # Create crop coors.
-        tblr = [160, 1050, 290, 1180]
+        tblr = [160, 1150, 290, 1180]
         # np.savetxt(crop_path, tblr)
     else:
         tblr = np.loadtxt(crop_path, dtype = float)
@@ -78,7 +79,13 @@ if __name__ == "__main__":
     # Check that it is in order
     filelist, shots = func.sortArrAbyB(filelist, shots)
     
-    dark_field = create_background([1], shots)
+    # dark_field = create_background([4, 167], shots)
+    # dark_field = io.imread(path_to_data + )
+    # np.savetxt(dark_field_path + diagnostic[:-1].replace(" ", "_") + ".txt",
+    #            dark_field)
+    dark_filed = np.loadtxt(dark_field_path + diagnostic[:-1].replace(" ", "_") + ".txt")
+    
+
     
     
     out_dictionary = {}
@@ -90,8 +97,9 @@ if __name__ == "__main__":
         nf = near_field_analysis(folder_path  + f, dark_field)
         # nf.plot_image()
         nf.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
-        # nf.plot_image()
-        
+        if False:
+            nf.plot_image()
+            plt.show()
         energy = nf.energy_in_beam(energy_calibration = 1)
         out_dictionary[shot] = energy
         
@@ -113,6 +121,7 @@ if __name__ == "__main__":
     plt.ylabel("Laser energy (Arb Units)")
     plt.xlabel("Shot Number")
     plt.title(date[:-1] + " run:" + run[:-1])
+    plt.ylim([0, None])
     func.saveFigure(path_to_data + date + "Evolution_of_laser_energy.png")
 
 
