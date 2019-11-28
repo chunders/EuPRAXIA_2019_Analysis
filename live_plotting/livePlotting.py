@@ -6,7 +6,13 @@ import time
 import matplotlib
 import matplotlib.pyplot as plt
 
-def getLastFileName(logFile,expPath,diagList):
+
+def imagesc(x,y,I,**kwargs):
+    ext = (np.min(x),np.max(x),np.max(y),np.min(y))
+    ih =plt.imshow(I,extent=ext,aspect='auto',**kwargs)
+    return ih
+
+def getLastFileName(logFile,expPath,diagList,returnDateRun=False):
     df = pd.read_csv(logFile,delimiter='\t')
     runNum = df['Run'].values
     shotNum = df['Shot'].values
@@ -25,7 +31,7 @@ def getLastFileName(logFile,expPath,diagList):
     if lastShot is not np.nan:
         currentShot = lastShot
         currentRun = lastRun
-        dateStr = df['Date'].values[1]
+        dateStr = df['Date'].values[0]
         runStr = '%04i' % currentRun
         shotStr = '%04i' % currentShot
         for diagStr in diagList:
@@ -34,8 +40,28 @@ def getLastFileName(logFile,expPath,diagList):
                 filePaths.append(matchingFiles[0])
             else:
                 filePaths.append('fail')
-    return filePaths
+    if returnDateRun:
+        return filePaths, dateStr, runStr
+    else:
+        return filePaths
 
+
+def getRunFiles(logFile,expPath,diagList,dateStr, runStr):
+    df = pd.read_csv(logFile,delimiter='\t')
+    runNum = df['Run'].values
+    shotNum = df['Shot'].values
+
+    if sum(~np.isnan(runNum))>0:
+    
+        filePaths = []
         
-            
+        for diagStr in diagList:
+            matchingFiles = glob.glob(os.path.join(expPath,dateStr,runStr,diagStr,runStr+'_*_'+diagStr)+'*')
+            filePaths.append(matchingFiles)
         
+    else:
+        filePaths=None
+
+    return filePaths      
+        
+
