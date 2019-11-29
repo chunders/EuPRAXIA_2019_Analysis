@@ -2,10 +2,13 @@ import matplotlib
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-logFile = r'Z:\2019 EuPRAXIA\2019-11-28\Untitled1.log'
+logFile = r'Z:\2019 EuPRAXIA\2019-11-29\Untitled.log'
 #calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda.mat'
 calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda_20191128.mat'
 diagList = ['PostPlasmaSpectrometer']
+import sys
+sys.path.append("..\post_interaction")
+print ('Here')
 from livePlotting import getLastFileName, getRunFiles, imagesc
 from postPlasmaDiagnostics import img2spec, getSpectra
 import time
@@ -54,7 +57,7 @@ while True:
                 plt.colorbar()
                 k=1
            
-
+            plt.tight_layout()
             plt.show()
             
             

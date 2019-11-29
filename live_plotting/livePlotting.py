@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 def imagesc(x,y,I,**kwargs):
-    ext = (np.min(x),np.max(x),np.max(y),np.min(y))
+    ext = (x[0],x[-1],y[0],y[-1])
     ih =plt.imshow(I,extent=ext,aspect='auto',**kwargs)
     return ih
 

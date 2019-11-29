@@ -49,7 +49,7 @@ class focal_spot():
             plt.colorbar()
             plt.show()
     
-    def load_image(self):
+    def load_image(self, backgroundImage):
         self.im = io.imread(self.filepath)    
         if backgroundImage is not None:
             # Check that the image is a float before taking the background away

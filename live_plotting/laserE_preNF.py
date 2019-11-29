@@ -12,10 +12,12 @@ sys.path.append("..\pre_interaction")
 from Near_field_analysis import near_field_analysis
 
 import time
+
+from skimage import io
 expPath = r'Z:\2019 EuPRAXIA'
 oldFilePath = ''
 
-
+background_file = r"Z:\2019 EuPRAXIA\2019-11-27\0004\Nearfield pre\0004_0003_Nearfield pre.tif"
 
 plt.ion()
 
@@ -23,7 +25,7 @@ tblr = [160, 1150, 290, 1180] # The region on the camera of interest.
 out_dictionary = {}
 loopCounter = 0
 
-dark_field = np.zeros( (2048, 2048) )
+dark_field = io.imread(background_file ) #np.zeros( (2048, 2048) )
 
 while loopCounter < 1e4:
     plt.pause(5)
@@ -67,7 +69,7 @@ while loopCounter < 1e4:
                 plt.clf()
                 plt.plot(shots_int, energy, '.')
                 plt.ylabel("Laser energy (J)")
-                plt.xlabel("Shot Number")      
+                plt.xlabel("Shot Counter")      
                 plt.ylim([0, 2])          
                 plt.show()
 
