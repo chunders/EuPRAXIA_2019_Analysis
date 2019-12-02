@@ -57,9 +57,29 @@ def img2spec(filePath):
     return eAxis_MeV, spec_pC_per_MeV
 
 
-def getLaxexSpectra(filePaths):
+def getLaxexSpectra(filePaths, file_dictionary = None):
+    # Use a dictionary to check whether the data has been extracted before
+    if file_dictionary == None:
+        print ('Creating blank dictionary')
+        file_dictionary = {}
+
+
     specList = []
     for f in filePaths:
-        eAxis_MeV, spec_pC_per_MeV = img2spec(f)
-        specList.append(spec_pC_per_MeV)
-    return eAxis_MeV, specList
+        if f in file_dictionary.keys():
+            specList.append(file_dictionary[f])
+        else:
+            eAxis_MeV, spec_pC_per_MeV = img2spec(f)
+            specList.append(spec_pC_per_MeV)
+            file_dictionary[f] = spec_pC_per_MeV
+
+    if not 'eAxis_MeV' in locals():
+        print ('Making energy axis for lanex')
+        eAxis_MeV, spec_pC_per_MeV = img2spec(filePaths[0])
+
+
+    return eAxis_MeV, specList, file_dictionary
+
+
+
+
