@@ -35,7 +35,7 @@ class xray_analysis():
         self.filepath = filepath
         self.load_image(darkfield)
         self.median_filter_kernel = median_filter_kernel
-        print (median_filter_kernel)
+
         self.image = medfilt2d(self.image, self.median_filter_kernel)
         
         self.signal_mask = 1
@@ -47,6 +47,8 @@ class xray_analysis():
             
         if background_mask is not None:
             self.background_mask = background_mask   
+            
+
                     
             
         
@@ -71,8 +73,27 @@ class xray_analysis():
         self.apply_masks()
         
     def apply_masks(self):
-        self.onshot_bg = np.average(self.background_mask * self.image)
-        self.signal = self.signal_mask * (self.image - self.onshot_bg)        
+        # two mask. background_mask, signal_mask
+        
+        self.onshot_bg = np.ma.array(self.image, mask= self.signal_mask).mean()
+        self.signal = np.ma.array(self.image, mask= self.background_mask)  - self.onshot_bg
+        
+    def single_hit_spectrum(self, bins = 100, rangeLims = None, plotting = True):
+        self.pixel_height = []
+        for i in self.signal.data.flatten():
+            if abs(i) != 0.0:
+                self.pixel_height.append(i)
+        self.hist, self.binEdges = np.histogram(self.pixel_height, bins = 100,
+                                                range = rangeLims)
+        self.bins = 0.5 * (self.binEdges[1:] + self.binEdges[:-1])
+        
+        
+        if plotting:
+            plt.plot(self.bins, self.hist)
+            # plt.hist(self.pixel_height, bins = bins)     
+            plt.show()           
+        
+        return np.c_[self.bins, self.hist]
         
     
 def create_background(shot_numbers):
@@ -148,8 +169,18 @@ def enlarge_mask_for_background(mask_ones, size = (20,20)):
 if __name__ == "__main__":
     path_to_data = "/Volumes/Lund_York/"
     date = "2019-11-27/"
-    run = "0004/"
+    run = "0002/"
     diagnostic = "Xray/"
+    
+    # Load all the shot data
+    folder_path = path_to_data + date + run + diagnostic
+    filelist = func.FilesInFolder(folder_path, ".tif")
+    shots = func.SplitArr(filelist, "_", 1)
+    # Check that it is in order
+    filelist, shots = func.sortArrAbyB(filelist, shots)
+
+    # dark_field = io.imread(path_to_data + "2019-11-27/0004/Xray/0004_0003_Xray.tif") 
+    
     
     # Cropping to the image.
     crop_path = path_to_data + date + diagnostic[:-1].replace(" ", "_") + "_crop.txt"
@@ -165,12 +196,7 @@ if __name__ == "__main__":
         tblr = np.array(tblr, dtype = int)    
 
     
-    # Load all the shot data
-    folder_path = path_to_data + date + run + diagnostic
-    filelist = func.FilesInFolder(folder_path, ".tif")
-    shots = func.SplitArr(filelist, "_", 1)
-    # Check that it is in order
-    filelist, shots = func.sortArrAbyB(filelist, shots)    
+   
     
     if False:
     # =============================================================================
@@ -182,7 +208,7 @@ if __name__ == "__main__":
         bg_files = [bg_file_path1, bg_file_path2]
         dark_field = np.zeros((2048, 2048))
         for file in bg_files:
-            bg1 =  xray_analysis(bg_file_path1)
+            bg =  xray_analysis(bg_file_path1)
             bg.image = medfilt2d(bg.image, 11)    
             dark_field += bg.image
         dark_field = dark_field / len(bg_files)
@@ -219,65 +245,88 @@ if __name__ == "__main__":
         mask = np.loadtxt(path_to_data + date + "Xray_mask.txt", dtype = int)
         mask_bg = np.loadtxt(path_to_data + date + "Xray_mask_bg.txt", dtype = int)    
 
-    # xr.plot_image(vmin=min_cmap)
-    
-    # xr.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
-    # xr.plot_image(vmin=min_cmap)
-    # xr.image = medfilt2d(xr.image, 5)
-
-
-    # plt.imshow(xr.image, cmap = 'nipy_spectral')    
-    # plt.colorbar()    
-    # # plt.imshow(mask_bool, cmap = 'Reds', alpha = 0.2)
-    # plt.imshow(mask, alpha = 0.4, cmap = 'Blues') 
-    # plt.imshow(mask_bg, alpha = 0.3, cmap = 'Reds')    
-    # plt.show()
-    
-
     out_dictionary = {}
-    
     for f in filelist[:]:
         shot = f.split("_")[1]
         print (f, shot)
         
         xr = xray_analysis(folder_path  + f, 
-                           darkfield = background,
-                           signal_mask = mask,
-                           background_mask = mask_bg)
+                           darkfield = dark_field,
+                           signal_mask = np.array(mask, dtype = bool),
+                           background_mask = np.array(mask_bg, dtype = bool)
+                           )
+        xr.apply_masks()
 
-        xr.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
+        # xr.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
 
-        if True:
+        if False:
             plt.title(shot)
             # xr.plot_image()
-            plt.imshow(medfilt2d(xr.signal, 11),
-                       cmap = 'Greens')
+            plt.imshow(medfilt2d(xr.signal.data, 11),
+                       # cmap = 'Greens'
+                       )
             plt.colorbar()
             plt.show()
         
         energy = np.sum(xr.signal)
         out_dictionary[shot] = energy
         
+        hist = xr.single_hit_spectrum(rangeLims=(0, 100), bins = 20,
+                                      plotting= False)
+        out_dictionary[shot] = hist
         
+                
         # would like to work out the number of points that are hits.
         # see how close to single hit we are?
 
     
-       
     func.saveDictionary(path_to_data + date + run + diagnostic[:-1].replace(" ", "_") + "_extraction.json",
                         out_dictionary)        
     
+    # shots = list(out_dictionary)
+    # shots.sort()
+    # shots_int = []
+    # energy = []
+    # for s in shots:
+    #     # if int(s) not in [4, 167]:        
+    #     shots_int.append(int(s))
+    #     energy.append(out_dictionary[s])
+    # plt.plot(shots_int, energy, '.')
+    # plt.ylabel("Laser energy (Arb Units)")
+    # plt.xlabel("Shot Number")
+# =============================================================================
+#     12 eV makes one count
+# =============================================================================
+    
     shots = list(out_dictionary)
-    shots.sort()
+    hmXrays = []
     shots_int = []
-    energy = []
     for s in shots:
         # if int(s) not in [4, 167]:        
         shots_int.append(int(s))
-        energy.append(out_dictionary[s])
-    plt.plot(shots_int, energy, '.')
-    plt.ylabel("Laser energy (Arb Units)")
+        hmXrays.append(out_dictionary[s][:,1])
+    shots_int.append(int(s)+1)      
+    hmXrays = np.array(hmXrays)
+
+    # Plot the output.
+    for h in hmXrays:
+        plt.plot(out_dictionary[s][:,0], h)
+    plt.xlim([0, 20])
+    plt.xlabel("Energy (Uncal)") 
+    plt.yscale('log')
+    plt.show()
+
+    plt.pcolormesh(shots_int,out_dictionary[s][:,0], hmXrays.T,
+                   norm = mpl.colors.LogNorm())
     plt.xlabel("Shot Number")
-    func.saveFigure(path_to_data + date + "Evolution_of_laser_energy.png")
-# '''
+    plt.ylabel("Energy (Uncal)")
+    plt.colorbar()
+    func.saveFigure(path_to_data + date + "Evolution_Xrays.png")
+    plt.show()
+    
+    
+   
+    
+    
+    
     

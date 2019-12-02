@@ -115,7 +115,9 @@ ax[1].legend()
 ax[1].set_ylabel("Angular pixel size\n(mrads)")
 
 
-ax[2].plot(xpixel, energyPerPixel_MeV_interp1d, label = "Scipy")
+ax[2].plot(pix_Calibration, Energy, 's-r', label = "Cal Points")
+ax[2].plot(xpixel, energyPerPixel_MeV_interp1d, label = "Fit 1D interp")
+ax[2].legend()
 ax[2].set_ylim([0, 400])
 
 ## Testing the two different intepolation methods against each other.

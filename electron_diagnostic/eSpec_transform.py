@@ -22,6 +22,55 @@ sys.path.insert(0, '/Users/chrisunderwood/Documents/Python/')
 import CUnderwood_Functions3 as func
 from skimage.io import imread
 
+def imshow_with_lineouts(image, fitlerSize = 3, CropY=None,
+                         x = [], y = [], xlabel = '', ylabel = '',
+                         aspect='auto', ylim = None,
+                         **kwargs):
+    import matplotlib.gridspec as gridspec
+    from scipy.signal import medfilt
+    
+        #Sum in each direction for lineouts
+    if len(x) == 0:
+        x = np.arange(image.shape[1])
+    if len(y) == 0:
+        y = np.arange(image.shape[0])    
+    sumX = np.nansum(image,axis = 0)
+    sumY = np.nansum(image,axis = 1)
+
+    fig = plt.figure(figsize=(8,8))
+    # 3 Plots with one major one and two extra ones for each axes.
+    gs = gridspec.GridSpec(4, 4, height_ratios=(1,1,1,1), 
+                           width_ratios=(0.5,1,1,1))
+    gs.update(wspace=0.025, hspace=0.025)
+    
+    #    Create all axis, including an additional one for the cbar
+    ax_main = plt.subplot(gs[0:3, 1:-1])             # Image
+    ax_main.axis('off')
+    ax_right = plt.subplot(gs[0:3, 0] ) # right hand side plot
+    ax_below = plt.subplot(gs[-1, 1:-1] ) # below plot
+    
+    cax4 = fig.add_axes([0.7, 0.35, 0.05, 0.5])
+    
+    im = ax_main.imshow(image, aspect=aspect ,**kwargs )
+    ax_below.plot(x, medfilt(sumX, fitlerSize))
+    ax_right.plot(medfilt(sumY, fitlerSize), y)
+    ax_below.set_xlabel(xlabel)
+    ax_right.set_ylabel(ylabel)
+    func.scientificAxis('y', ax = ax_below)
+    func.scientificAxis('x', ax = ax_right)    
+    try:
+        ax_right.set_ylim([-ylim, ylim])
+        low = func.nearposn(y, -ylim)
+        high = func.nearposn(y, ylim)        
+        ax_main.set_ylim([low, high])
+    except TypeError:
+        pass
+    
+    plt.colorbar(im, cax = cax4)
+
+
+
+
 def load_calibration():
     filePath = 'especCalib_per_pix.txt'
     calFile = np.loadtxt(filePath)
@@ -73,11 +122,17 @@ def histgramPoints(arr, binEdges):
     
     return hist, bin_edges, binCenters
     
+
+def centerBins(binEdges):
+    binCenters = (bin_edges[1:] + bin_edges[:-1] )* 0.5
+    return  binCenters
     
 def createHistogram(arr, binEdges):
     hist = []
     for i in range(len(binEdges)- 1):
         step = abs(binEdges[i+1] - binEdges[i])
+        # if step == 0:
+        #     step = 1
         hist.append(np.sum(arr[binEdges[i]:binEdges[i+1]]) /step
                     )
     return hist
@@ -122,8 +177,8 @@ if __name__ == "__main__":
 #     # xCenters = xPixNo[indexes]
     
     hist_pointPerEnergy, bin_edges, binCenters = histgramPoints(EPerPix_MeV, binEdges = binEdges)
+    energy_bins = np.array(binCenters) * 1
     
-
     # plot_calibration(xPixNo, EPerPix_MeV, xCenters, binEdges, mradsPerPix)
 
 
@@ -173,7 +228,7 @@ if __name__ == "__main__":
         l = hist2d.sum(axis = 1)
         beamAxis = func.nearposn(l, l.max())
 
-    diverenceBins = 550
+    diverenceBins = 545
     divergenceRange = (height * mradsPerPix.max() // 2)
     newDivEdges = np.linspace(-divergenceRange, divergenceRange, num = diverenceBins)
     DivCenters = (newDivEdges[:-1] + newDivEdges[1:]) * 0.5
@@ -198,6 +253,10 @@ if __name__ == "__main__":
     plt.colorbar()
     # plt.ylim([-15, 15])
     plt.show()
+    
+    imshow_with_lineouts(new_image, y = DivCenters, x = energy_bins, 
+                         ylabel ='Div (mrads)', xlabel = 'Energy (MeV)', 
+                         ylim = 30)
     
 
 
