@@ -6,7 +6,7 @@ from scipy.interpolate import interp1d
 from matplotlib.colors import LinearSegmentedColormap
 
 
-logFile = r'Z:\2019 EuPRAXIA\2019-11-29\Untitled.log'
+logFile = r'Z:\2019 EuPRAXIA\2019-12-02\Untitled.log'
 
 diagList = ['Lanex']
 from livePlotting import getLastFileName, getRunFiles, imagesc
@@ -26,9 +26,18 @@ def LEGENDCmap():
     return cmap
 
 
+import argparse
+parser = argparse.ArgumentParser(description='Lower and Upper Charge')
+parser.add_argument('-l', '--lower', default=1e-3, type=float)
+parser.add_argument('-u', '--upper', default=2, type=float)
+args = parser.parse_args()
+
 upperEnergy = 200
 
-maxCharge_pC = 2.0
+
+
+maxCharge_pC = args.upper
+minCharge_pC = args.lower
 
 plt.ion()
 fig,ax = plt.subplots(2,1)
@@ -81,7 +90,7 @@ while True:
             # y = np.arange(len(lineoutList[0]))
             y = eAxis_MeV
             lineoutImg = np.flipud(np.swapaxes(np.array(specList),0,1))
-            ih = imagesc(x,y,lineoutImg, vmin = 1e-3, vmax = maxCharge_pC,
+            ih = imagesc(x,y,lineoutImg, vmin = minCharge_pC, vmax = maxCharge_pC,
                     #  norm = matplotlib.colors.LogNorm(),
                     cmap = LEGENDCmap()
                      )
@@ -102,6 +111,8 @@ while True:
             plt.ylabel("Charge (pC)")
             plt.xlabel('Shot ')
             plt.tight_layout()
+            plt.savefig(expPath + '\\' + dateStr + '\\' + runStr + diagList[0] +  'quickAnalysis.png',
+                 dpi = 150, bbox_inches='tight')            
             plt.show()
             
             

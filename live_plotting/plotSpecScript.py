@@ -2,9 +2,9 @@ import matplotlib
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-logFile = r'Z:\2019 EuPRAXIA\2019-11-29\Untitled.log'
+logFile = r'Z:\2019 EuPRAXIA\2019-12-02\Untitled.log'
 #calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda.mat'
-calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda_20191128.mat'
+calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda_20191202.mat'
 diagList = ['PostPlasmaSpectrometer']
 import sys
 sys.path.append("..\post_interaction")
@@ -58,6 +58,8 @@ while True:
                 k=1
            
             plt.tight_layout()
+            plt.savefig(expPath + '\\' + dateStr + '\\' + runStr + diagList[0] +  'quickAnalysis.png',
+                 dpi = 150, bbox_inches='tight')
             plt.show()
             
             
