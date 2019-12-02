@@ -16,10 +16,12 @@ import matplotlib as mpl
 mpl.rcParams['figure.figsize'] = [8.0,6.0]
 import matplotlib.pyplot as plt
 
-# Load my module of functions
+# # Load my module of functions
 import sys
-sys.path.insert(0, '/Users/chrisunderwood/Documents/Python/')
-import CUnderwood_Functions3 as func
+sys.path.insert(0, r'C:\Users\laser\Documents\GitHub')
+import EuPRAXIA_2019_Analysis
+
+from EuPRAXIA_2019_Analysis import Functions3 as func
 from skimage.io import imread
 
 pC_per_count = 1.5585e-7
@@ -74,8 +76,8 @@ def imshow_with_lineouts(image, fitlerSize = 3, CropY=None,
 
 
 
-def load_calibration():
-    filePath = 'especCalib_per_pix.txt'
+def load_calibration(filePath = 'especCalib_per_pix.txt'):
+    
     calFile = np.loadtxt(filePath)
     xPixNo =    np.array(calFile[:,0], dtype = int)
     xDist_mm =  calFile[:,1]
@@ -83,7 +85,7 @@ def load_calibration():
     angularSizeOfPixel_mrads = calFile[:,3]
     return xPixNo, xDist_mm, energyPerPix_MeV, angularSizeOfPixel_mrads
 
-def loadImage(height = 543):
+def loadImage(height = 543, fileName = "/Volumes/Lund_York/2019-11-26/0002/Lanex/0002_0010_Lanex.tif"):
     start = 867
     im = np.zeros((height, 2048))   
     # for i in range(1, 2):
@@ -91,8 +93,8 @@ def loadImage(height = 543):
     #     d = imread(file)
     #     d = np.array(d[start:start + height,:])
     #     im += d
-    file = "/Volumes/Lund_York/2019-11-26/0002/Lanex/0002_0010_Lanex.tif"
-    d = imread(file)
+    
+    d = imread(fileName)
     d = np.array(d[start:start + height,:])
     im = d
 
@@ -113,6 +115,8 @@ def evenlySpacedDivergence(div, start, end, xPixNo, nbins = 20):
 
 
 def evenlySpacedEnergy(EPerPix_MeV, xPixNo, nbins = 200):
+    xCenters = xPixNo[indexes]
+
     binEdges = np.linspace(EPerPix_MeV[0], EPerPix_MeV[-1], num = nbins,
                              endpoint= True)
     indexes = closest_argmin(binEdges, EPerPix_MeV)
@@ -122,6 +126,8 @@ def evenlySpacedEnergy(EPerPix_MeV, xPixNo, nbins = 200):
 def histgramPoints(arr, binEdges):
     hist, bin_edges = np.histogram(arr, bins = binEdges)
     binCenters = (bin_edges[1:] + bin_edges[:-1] )* 0.5
+    # Divide by the energy bin
+    hist = hist * abs( bin_edges[:-1] -  bin_edges[1:])
     
     return hist, bin_edges, binCenters
     
@@ -147,7 +153,7 @@ def rehist_2D(arr, binEdges):
         dE = abs(binEdges[i] - binEdges[i+1])
         dE_list.append(dE)
         hist.append( 
-                arr[:, binEdges[i]:binEdges[i+1] ].sum(axis = 1) / dE 
+                arr[:, binEdges[i]:binEdges[i+1] ].sum(axis = 1) #/ dE 
                 )
     hist = np.array(hist).T
     return hist, dE_list
@@ -238,8 +244,9 @@ if __name__ == "__main__":
     new_image = []
     for i, row in enumerate(hist2d.T[:]):
         divPerPixelRow = (np.arange(543) - beamAxis) * mradsPerPix[i]
-        binEdges, xCenters, indexes = evenlySpacedDivergence(divPerPixelRow, newDivEdges[0], newDivEdges[-1],
-                                         xPixNo,nbins = diverenceBins)
+
+        binEdges, xCenters, indexes = evenlySpacedDivergence(divPerPixelRow, newDivEdges[0], newDivEdges[-1], 
+                        xPixNo, nbins = diverenceBins)
         lineout = createHistogram(row, indexes)
         new_image.append(lineout[::-1])
         # # plt.plot(divPerPixelRow)
