@@ -29,20 +29,21 @@ def runningMean(x, N):
 expPath = r'Z:\2019 EuPRAXIA'
 oldFilePath = ''
 
+vmin = 1.15
+vmax = 1.75
+eCal = 2.27e-9 * 0.8157894736842106
+
 background_file = r"Z:\2019 EuPRAXIA\2019-11-27\0004\Nearfield pre\0004_0003_Nearfield pre.tif"
 
 # f, ax = plt.subplots(nrows=1 ) #, gridspec_kw={'height_ratios': [2, 1]} )
 
-tblr = [160, 1150, 290, 1180] # The region on the camera of interest.
+tblr = [100, 1200, 400, 1400] # The region on the camera of interest.
 NF_dictionary = {}
 FF_dictionary = {}
 
 loopCounter = 0
 
 dark_field_NF = io.imread(background_file ) #np.zeros( (2048, 2048) )
-umPerPixel = 2.575e-01 
-
-
 runLines = {}
 
 # Load the data from previous runs.
@@ -69,7 +70,7 @@ for run in listFilePathsPerRun:
             try:
                 nf = near_field_analysis(fileName)
                 nf.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
-                energy = nf.energy_in_beam(energy_calibration = 2.27e-9)
+                energy = nf.energy_in_beam(energy_calibration = eCal)
                 NF_dictionary[shot] = energy 
             except PermissionError:
                 print ("PermissionError, probs still writing file.")     
@@ -99,9 +100,9 @@ plt.plot(shots_int_NF, runningMean(energy, 8), '--')
 
 plt.ylabel("Laser energy (J)")
 plt.xlabel("Shot Counter")  
-plt.ylim([1.6, 1.95])  
+plt.ylim([vmin, vmax])  
 
-props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+props = dict(boxstyle='round', facecolor='wheat', alpha=1.0)
 endOfRun = 0
 for r in list(runLines):
     endOfRun += runLines[r]
@@ -153,7 +154,7 @@ while loopCounter < 1e4:
                         try:
                             nf = near_field_analysis(f)
                             nf.crop_tblr(tblr[0], tblr[1], tblr[2], tblr[3])
-                            energy = nf.energy_in_beam(energy_calibration = 2.27e-9)
+                            energy = nf.energy_in_beam(energy_calibration= eCal)
                             NF_dictionary[shot] = energy 
                         except PermissionError:
                             print ("PermissionError, probs still writing file.")         
@@ -182,14 +183,16 @@ while loopCounter < 1e4:
 
                 plt.ylabel("Laser energy (J)")
                 plt.xlabel("Shot Counter")  
-                plt.ylim([1.6, 1.95])  
+
+
+                plt.ylim([vmin, vmax])  
 
                 endOfRun = 0
                 for r in list(runLines):
                     if r is not oldRunStr:
                         endOfRun += runLines[r]
                         plt.vlines(endOfRun, 0, 2.5)
-                        plt.text(endOfRun, 1.6, r, bbox=props, rotation = 90)
+                        plt.text(endOfRun, vmin, r, bbox=props, rotation = 90)
 
                 plt.title('Pre Interaction ' + dateStr)
                 plt.savefig(expPath + '\\' + dateStr + '\\' + diagList[0] +  'quickAnalysis.png',

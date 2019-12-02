@@ -122,6 +122,8 @@ def evenlySpacedEnergy(EPerPix_MeV, xPixNo,  nbins = 200):
 def histgramPoints(arr, binEdges):
     hist, bin_edges = np.histogram(arr, bins = binEdges)
     binCenters = (bin_edges[1:] + bin_edges[:-1] )* 0.5
+    # Divide by the energy bin
+    hist = hist * abs( bin_edges[:-1] -  bin_edges[1:])
     
     return hist, bin_edges, binCenters
     
@@ -147,7 +149,7 @@ def rehist_2D(arr, binEdges):
         dE = abs(binEdges[i] - binEdges[i+1])
         dE_list.append(dE)
         hist.append( 
-                arr[:, binEdges[i]:binEdges[i+1] ].sum(axis = 1) / dE 
+                arr[:, binEdges[i]:binEdges[i+1] ].sum(axis = 1) #/ dE 
                 )
     hist = np.array(hist).T
     return hist, dE_list
