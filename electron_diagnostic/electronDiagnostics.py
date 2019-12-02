@@ -16,7 +16,12 @@ def load_Ecalibration():
     # pixelsPos = distance/distance.max() * sizeOfImage
     # f = interp1d(pixelsPos, Energy, kind = 'cubic')
     # xEnergy = f(xpixel) 
-    espec_cal_per_pix_file = r'Z:\2019 EuPRAXIA\Electron_spectrometer\Inputs\especCalib_energyMeV_per_pix.txt'    
+    if False:
+        espec_cal_per_pix_file = r'Z:\2019 EuPRAXIA\Electron_spectrometer\Inputs\especCalib_energyMeV_per_pix.txt'    
+    else:
+        gdrive = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/electron_diagnostic/"
+        espec_cal_per_pix_file = gdrive + 'especCalib_per_pix.txt'
+
     calibrationFile = np.loadtxt(espec_cal_per_pix_file)
 
     xpixel = calibrationFile[:,0]

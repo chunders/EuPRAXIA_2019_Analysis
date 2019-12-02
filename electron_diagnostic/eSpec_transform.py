@@ -22,6 +22,9 @@ sys.path.insert(0, '/Users/chrisunderwood/Documents/Python/')
 import CUnderwood_Functions3 as func
 from skimage.io import imread
 
+pC_per_count = 1.5585e-7
+
+
 def imshow_with_lineouts(image, fitlerSize = 3, CropY=None,
                          x = [], y = [], xlabel = '', ylabel = '',
                          aspect='auto', ylim = None,
@@ -93,7 +96,7 @@ def loadImage(height = 543):
     d = np.array(d[start:start + height,:])
     im = d
 
-    return im
+    return im * pC_per_count
 
 def closest_argmin(search, mainArr):
     index=[]
@@ -101,7 +104,7 @@ def closest_argmin(search, mainArr):
         index.append(func.nearposn(mainArr, point))
     return index
     
-def evenlySpacedDivergence(div, start, end, nbins = 20):
+def evenlySpacedDivergence(div, start, end, xPixNo, nbins = 20):
     binEdges = np.linspace(start, end, num = nbins,
                              endpoint= True)
     indexes = closest_argmin(binEdges, div)
@@ -109,7 +112,7 @@ def evenlySpacedDivergence(div, start, end, nbins = 20):
     return binEdges, xCenters, indexes
 
 
-def evenlySpacedEnergy(EPerPix_MeV, nbins = 200):
+def evenlySpacedEnergy(EPerPix_MeV, xPixNo, nbins = 200):
     binEdges = np.linspace(EPerPix_MeV[0], EPerPix_MeV[-1], num = nbins,
                              endpoint= True)
     indexes = closest_argmin(binEdges, EPerPix_MeV)
@@ -167,7 +170,7 @@ if __name__ == "__main__":
     xPixNo, xDist, EPerPix_MeV, mradsPerPix = load_calibration()
     height = 543
 
-    binEdges, xCenters, indexes = evenlySpacedEnergy(EPerPix_MeV,
+    binEdges, xCenters, indexes = evenlySpacedEnergy(EPerPix_MeV, xPixNo,
                                                      nbins = 160
                                                      )
 
@@ -236,7 +239,7 @@ if __name__ == "__main__":
     for i, row in enumerate(hist2d.T[:]):
         divPerPixelRow = (np.arange(543) - beamAxis) * mradsPerPix[i]
         binEdges, xCenters, indexes = evenlySpacedDivergence(divPerPixelRow, newDivEdges[0], newDivEdges[-1],
-                               nbins = diverenceBins)
+                                         xPixNo,nbins = diverenceBins)
         lineout = createHistogram(row, indexes)
         new_image.append(lineout[::-1])
         # # plt.plot(divPerPixelRow)
