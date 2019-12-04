@@ -17,8 +17,10 @@ mpl.rcParams['figure.figsize'] = [8.0,6.0]
 import matplotlib.pyplot as plt
 
 import sys
-sys.path.append("..")
-import Functions3 as func
+sys.path.insert(0, r'C:\Users\laser\Documents\GitHub')
+
+
+from EuPRAXIA_2019_Analysis import Functions3 as func
 
 from skimage import io
 

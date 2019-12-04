@@ -3,7 +3,15 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-logFile = r'Z:\2019 EuPRAXIA\2019-12-02\Untitled.log'
+if False:
+    import datetime
+
+    now = str(datetime.datetime.now())
+    TodaysDate = now.split(" ")[0]
+    # logFile = r'Z:\2019 ' + 'EuPRAXIA\{}\Untitled.log'.format(TodaysDate)
+else:
+    logFile = r'Z:\2019 EuPRAXIA\2019-12-03\Untitled.log'
+    
 diagList = ['Nearfield pre']
 
 from livePlotting import getLastFileName, getRunFiles, imagesc
@@ -29,9 +37,15 @@ def runningMean(x, N):
 expPath = r'Z:\2019 EuPRAXIA'
 oldFilePath = ''
 
-vmin = 1.15
-vmax = 1.75
-eCal = 2.27e-9 * 0.8157894736842106
+import argparse
+parser = argparse.ArgumentParser(description='Lower and Upper Charge')
+parser.add_argument('-l', '--lower', default=0.5, type=float)
+parser.add_argument('-u', '--upper', default=1., type=float)
+args = parser.parse_args()
+
+# vmin = 0.5
+# vmax = 1.
+eCal = 9.905997677825284e-10 # 2.27e-9 * 0.8157894736842106
 
 background_file = r"Z:\2019 EuPRAXIA\2019-11-27\0004\Nearfield pre\0004_0003_Nearfield pre.tif"
 
@@ -100,18 +114,20 @@ plt.plot(shots_int_NF, runningMean(energy, 8), '--')
 
 plt.ylabel("Laser energy (J)")
 plt.xlabel("Shot Counter")  
-plt.ylim([vmin, vmax])  
+# plt.ylim([vmin, vmax])  
 
 props = dict(boxstyle='round', facecolor='wheat', alpha=1.0)
 endOfRun = 0
 for r in list(runLines):
     endOfRun += runLines[r]
     plt.vlines(endOfRun, 0, 2.5)
-    plt.text(endOfRun, 1.65, r, bbox=props,  rotation = 90)
+    plt.text(endOfRun, args.lower, r, bbox=props,  rotation = 90)
 
 plt.title('Pre Interaction ' + dateStr)
 
 print (expPath + '\\' + dateStr + '\\' + diagList[0] +  'quickAnalysis.png')
+plt.ylim([args.lower, args.upper])  
+
 plt.savefig(expPath + '\\' + dateStr + '\\' + diagList[0] +  'quickAnalysis.png',
     dpi = 150, bbox_inches='tight', horizontalalignment='right')
 plt.show()
@@ -185,14 +201,14 @@ while loopCounter < 1e4:
                 plt.xlabel("Shot Counter")  
 
 
-                plt.ylim([vmin, vmax])  
+                plt.ylim([args.lower, args.upper])  
 
                 endOfRun = 0
                 for r in list(runLines):
                     if r is not oldRunStr:
                         endOfRun += runLines[r]
                         plt.vlines(endOfRun, 0, 2.5)
-                        plt.text(endOfRun, vmin, r, bbox=props, rotation = 90)
+                        plt.text(endOfRun, args.lower, r, bbox=props, rotation = 90)
 
                 plt.title('Pre Interaction ' + dateStr)
                 plt.savefig(expPath + '\\' + dateStr + '\\' + diagList[0] +  'quickAnalysis.png',
