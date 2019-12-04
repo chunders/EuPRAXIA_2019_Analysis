@@ -10,7 +10,7 @@ if False:
     TodaysDate = now.split(" ")[0]
     # logFile = r'Z:\2019 ' + 'EuPRAXIA\{}\Untitled.log'.format(TodaysDate)
 else:
-    logFile = r'Z:\2019 EuPRAXIA\2019-12-03\Untitled.log'
+    logFile = r'Z:\2019 EuPRAXIA\2019-12-04\Untitled.log'
     
 diagList = ['Nearfield pre']
 

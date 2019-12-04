@@ -24,7 +24,8 @@ from scipy.optimize import curve_fit
 
 import sys
 sys.path.append("..")
-import Functions3 as func
+sys.path.insert(0, r'C:\Users\laser\Documents\GitHub')
+import EuPRAXIA_2019_Analysis.Functions3 as func
 
 imageRead = True
 if imageRead:
@@ -203,6 +204,8 @@ class focal_spot():
 
     def fit_2DGaus(self,umPerPixel, plotting = True, view_n_std = 4, 
                    crop_pixels_around_peak = False):
+        ''' crop_pixels_around_peak should be replaced with the number of pixels to crop by
+        '''
         
         if crop_pixels_around_peak == False:
             shape = self.imShape
@@ -216,7 +219,10 @@ class focal_spot():
             maxCoors = np.array([crop_pixels_around_peak //2, crop_pixels_around_peak//2])
             guessWhole = False
             
-            
+        # print ('In fit 2d gaus')
+        # print ('shape', shape, 'max coors', maxCoors)
+
+
         self.umPerPixel = umPerPixel
         
         x = np.linspace(0, shape[0], shape[0])
@@ -265,6 +271,29 @@ class focal_spot():
                 out, err = np.array([out, err]) * self.umPerPixel
             print ("{}\t\t{:2.2f} +/- {:1.2f}".format(n, out, err))
             out_dict[nd] = [out, err]
+        
+        print ("Fit Params:")
+        names = ["amplitude", "xo [um]   ", "yo [um]   ", "sigma_x [um]", "sigma_y [um]", "theta    ", "offset    "]
+        dnames = ["amp", "xc", "yc", "sigma_x", "sigma_y", "theta", "offset"]        
+        TF1 = [False, True, True, True, True, False, False]
+        TF2 = [False, 'x', 'y', False, False, False, False]
+
+        out_dict= {}
+        for n, nd, out, err, tf1, tf2 in zip(names, dnames, popt, perr, TF1, TF2):
+            if tf1:
+                out, err = np.array([out, err]) * self.umPerPixel
+                if type(tf2) == str and crop_pixels_around_peak:
+                    if tf2 == 'x':
+                        out += self.maxCoors[0]
+                    elif tf2 == 'y':
+                        out += self.maxCoors[1]
+
+            print ("{}\t\t{:2.2f} +/- {:1.2f}".format(n, out, err))
+            out_dict[nd] = [out, err]
+        
+
+
+
         
         return out_dict
         # return np.array([popt[3] * self.umPerPixel, popt[4] * self.umPerPixel])
