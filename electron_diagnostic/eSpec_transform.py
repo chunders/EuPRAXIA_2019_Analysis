@@ -23,9 +23,11 @@ import EuPRAXIA_2019_Analysis
 
 from EuPRAXIA_2019_Analysis import Functions3 as func
 from skimage.io import imread
-
+from EuPRAXIA_2019_Analysis.electron_diagnostic.electronDiagnostics import im2spec, load_Ecalibration
 pC_per_count = 1.5585e-7
 
+from scipy.interpolate import interp1d
+from scipy.signal import medfilt2d
 
 def imshow_with_lineouts(image, fitlerSize = 3, CropY=None,
                          x = [], y = [], xlabel = '', ylabel = '',
@@ -57,7 +59,7 @@ def imshow_with_lineouts(image, fitlerSize = 3, CropY=None,
     cax4 = fig.add_axes([0.7, 0.35, 0.05, 0.5])
     
     im = ax_main.imshow(image, aspect=aspect ,**kwargs )
-    ax_below.plot(x, medfilt(sumX, fitlerSize))
+    ax_below.plot(x, medfilt(sumX, fitlerSize), '.-')
     ax_right.plot(medfilt(sumY, fitlerSize), y)
     ax_below.set_xlabel(xlabel)
     ax_right.set_ylabel(ylabel)
@@ -85,7 +87,8 @@ def load_calibration(filePath = 'especCalib_per_pix.txt'):
     angularSizeOfPixel_mrads = calFile[:,3]
     return xPixNo, xDist_mm, energyPerPix_MeV, angularSizeOfPixel_mrads
 
-def loadImage(height = 543, fileName = "/Volumes/Lund_York/2019-11-26/0002/Lanex/0002_0010_Lanex.tif"):
+def loadImage(height = 543,
+              fileName = "/Volumes/Lund_York/2019-11-26/0002/Lanex/0002_0010_Lanex.tif"):
     start = 867
     im = np.zeros((height, 2048))   
     # for i in range(1, 2):
@@ -115,8 +118,6 @@ def evenlySpacedDivergence(div, start, end, xPixNo, nbins = 20):
 
 
 def evenlySpacedEnergy(EPerPix_MeV, xPixNo, nbins = 200):
-    xCenters = xPixNo[indexes]
-
     binEdges = np.linspace(EPerPix_MeV[0], EPerPix_MeV[-1], num = nbins,
                              endpoint= True)
     indexes = closest_argmin(binEdges, EPerPix_MeV)
@@ -153,7 +154,7 @@ def rehist_2D(arr, binEdges):
         dE = abs(binEdges[i] - binEdges[i+1])
         dE_list.append(dE)
         hist.append( 
-                arr[:, binEdges[i]:binEdges[i+1] ].sum(axis = 1) #/ dE 
+                arr[:, binEdges[i]:binEdges[i+1] ].sum(axis = 1) # / dE 
                 )
     hist = np.array(hist).T
     return hist, dE_list
@@ -172,6 +173,8 @@ def plot_calibration(xPixNo, EPerPix_MeV, xCenters, binEdges, mradsPerPix):
     
     
 if __name__ == "__main__":
+    
+    xEnergy, dEdx, eAxis_MeV, x_mm = load_Ecalibration()
     
     xPixNo, xDist, EPerPix_MeV, mradsPerPix = load_calibration()
     height = 543
@@ -192,7 +195,21 @@ if __name__ == "__main__":
 
 
 
-    im = loadImage(height)
+    im = loadImage(height,
+           fileName = "/Volumes/Lund_York/2019-11-26/0002/Lanex/0002_0001_Lanex.tif"
+                   )
+    im = medfilt2d(im, kernel_size = 5)
+    
+    newImage = []
+    for row in im:
+        lineout_pC_per_mm = row/np.abs(np.gradient(x_mm.flatten()))
+        specFunc = interp1d(xEnergy,lineout_pC_per_mm/dEdx,bounds_error=None, fill_value=0)
+    
+        spec_pC_per_MeV = specFunc(eAxis_MeV)
+        newImage.append(spec_pC_per_MeV)
+    newImage = np.array(newImage)
+    plt.pcolormesh(eAxis_MeV, range(newImage.shape[0]), newImage)
+
     # axis 0 is x
     # axis 1 is y
     # plt.imshow(im)
@@ -203,15 +220,20 @@ if __name__ == "__main__":
     hist2d, dElist = rehist_2D(im, indexes)
     l = hist2d.sum(axis=1)
     indCenter = func.nearposn(l, l.max())
+    spec = im2spec(im)
     
-    f, ax = plt.subplots(nrows = 2)
+    
+    f, ax = plt.subplots(nrows = 3)
     ax[0].plot(lineout)
-    ax[1].plot(binCenters, hist, 'r', label = "1D")
+    ax[1].plot(binCenters, hist / max(hist), 'r', label = "1D")
+    ax[1].plot(spec[0], spec[1] / spec[1].max(), label = 'Mat')
     # ax1 = func.TwinAxis(ax[1])
-    ax[1].plot(binCenters, hist2d.sum(axis = 0), 'b', label = "2D")
+    ax[2].plot(binCenters, hist2d.sum(axis = 0), 'b', label = "2D")
     ax[1].legend(loc = 1)
+    ax[2].legend(loc = 1)
     # ax1.legend(loc = 2)    
     plt.show()
+    
     
     # ax[1].plot(binCenters, hist)
     ext = (binCenters[0],binCenters[-1],
@@ -268,7 +290,3 @@ if __name__ == "__main__":
                          ylabel ='Div (mrads)', xlabel = 'Energy (MeV)', 
                          ylim = 30)
     
-
-
-
-

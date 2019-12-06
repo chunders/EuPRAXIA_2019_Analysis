@@ -48,7 +48,16 @@ def getLaxexLineouts(filePaths):
         lineoutList.append(im2lineout(img))
     return lineoutList
 
+def im2spec(img):
+    
+    xEnergy, dEdx, eAxis_MeV, x_mm = load_Ecalibration()
 
+    dEdx_lin = im2lineout(img)
+    lineout_pC_per_mm = dEdx_lin/np.abs(np.gradient(x_mm.flatten()))
+    specFunc = interp1d(xEnergy,lineout_pC_per_mm/dEdx,bounds_error=None, fill_value=0)
+    
+    spec_pC_per_MeV = specFunc(eAxis_MeV)
+    return eAxis_MeV, spec_pC_per_MeV
 
 def img2spec(filePath):
     xEnergy, dEdx, eAxis_MeV, x_mm = load_Ecalibration()
