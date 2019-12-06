@@ -11,7 +11,7 @@ from EuPRAXIA_2019_Analysis.pre_interaction.FarField import focal_spot
 from EuPRAXIA_2019_Analysis.live_plotting.livePlotting import getLastFileName, getRunFiles, imagesc
 
 
-logFile = r'Z:\2019 EuPRAXIA\2019-12-04\Untitled.log'
+logFile = r'Z:\2019 EuPRAXIA\2019-12-05\Untitled.log'
 diagList = ['Farfield pre']
 expPath = r'Z:\2019 EuPRAXIA'
 oldFilePath = ''
@@ -20,6 +20,13 @@ umPerPixel = 2.575e-01
 FF_dictionary = {}
 
 plt.ion()
+f, ax = plt.subplots(nrows= 2)
+
+def runningMean(x, N):
+    y = np.zeros((len(x),))
+    for ctr in range(len(x)):
+         y[ctr] = np.sum(x[(ctr-N):(ctr)])
+    return y/N
 
 while True:
     plt.pause(5)
@@ -82,14 +89,24 @@ while True:
 
             xc = np.array(xc)
             yc = np.array(yc)
+            nInMean = 5
+            xmean = runningMean(xc[:,0], nInMean)
+            ymean = runningMean(yc[:,0], nInMean)
 
-            plt.clf()
-            plt.plot(range(len(xc[:,0])), xc[:,0], label = 'xc')
-            plt.plot(range(len(yc[:,0])), yc[:,0], label = 'yc')  
-            plt.title("Pre FF Stability on " +  dateStr)  
-            plt.xlabel('Shots')
-            plt.ylabel('Pixel Position of center')
-            plt.legend()
+            for a in ax:
+                a.cla()
+            ax[0].plot(np.arange(len(xc[:,0]), dtype = int), xc[:,0], label = 'xc')            
+            ax[0].plot(np.arange(len(xc[:,0]))[nInMean:],
+                         xmean[nInMean :], '--')
+
+            ax[1].plot(np.arange(len(yc[:,0])), yc[:,0], label = 'yc')  
+            ax[1].plot(np.arange(len(yc[:,0]))[nInMean:],
+                          ymean[nInMean :], '--')
+
+            plt.suptitle("Pre FF Stability on " +  dateStr)  
+            ax[1].set_xlabel('Shots')
+            ax[0].set_ylabel('xc')
+            ax[1].set_ylabel('yc')
             plt.show()          
 
                     

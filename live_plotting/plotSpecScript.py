@@ -12,8 +12,8 @@ if True :
     calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda_' + '{}.mat'.format( TodaysDate.replace('-', ''))
 
 else:
-    logFile = r'Z:\2019 EuPRAXIA\2019-12-02\Untitled.log'
-    calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda_20191202.mat'
+    logFile = r'Z:\2019 EuPRAXIA\2019-12-05\Untitled.log'
+    calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda_20191205.mat'
 
 
 #calFile= r'Z:\2019 EuPRAXIA\OrielMysteryGrating_lambda.mat'

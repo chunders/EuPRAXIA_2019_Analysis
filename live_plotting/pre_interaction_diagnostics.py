@@ -10,7 +10,7 @@ if False:
     TodaysDate = now.split(" ")[0]
     # logFile = r'Z:\2019 ' + 'EuPRAXIA\{}\Untitled.log'.format(TodaysDate)
 else:
-    logFile = r'Z:\2019 EuPRAXIA\2019-12-04\Untitled.log'
+    logFile = r'Z:\2019 EuPRAXIA\2019-12-05\Untitled.log'
     
 diagList = ['Nearfield pre']
 
@@ -30,7 +30,7 @@ from skimage import io
 def runningMean(x, N):
     y = np.zeros((len(x),))
     for ctr in range(len(x)):
-         y[ctr] = np.sum(x[ctr:(ctr+N)])
+         y[ctr] = np.sum(x[(ctr-N):(ctr)])
     return y/N
 
 

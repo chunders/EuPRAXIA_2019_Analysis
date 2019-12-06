@@ -13,7 +13,7 @@ if False:
     TodaysDate = now.split(" ")[0]
     # logFile = r'Z:\2019 ' + 'EuPRAXIA\{}\Untitled.log'.format(TodaysDate)
 else:
-    logFile = r'Z:\2019 EuPRAXIA\2019-12-04\Untitled.log'
+    logFile = r'Z:\2019 EuPRAXIA\2019-12-05\Untitled.log'
 
 
 # Lower Limit and Upper limit of punisher zone in pixels
@@ -42,10 +42,10 @@ import argparse
 parser = argparse.ArgumentParser(description='Lower and Upper Charge')
 parser.add_argument('-l', '--lower', default=1e-3, type=float)
 parser.add_argument('-u', '--upper', default=2, type=float)
+parser.add_argument('-e', '--upperEnergy', default=2, type=float)
 args = parser.parse_args()
 
-upperEnergy = 275
-
+upperEnergy = args.upperEnergy
 
 
 maxCharge_pC = args.upper
