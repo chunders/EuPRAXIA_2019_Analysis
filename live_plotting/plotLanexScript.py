@@ -11,7 +11,8 @@ logFile = r'Z:\2019 EuPRAXIA\2019-12-02\Untitled.log'
 diagList = ['Lanex']
 from livePlotting import getLastFileName, getRunFiles, imagesc
 import sys
-sys.path.append("..")
+path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
+sys.path.append( path_to_git )
 # C:\Users\laser\Documents\GitHub\EuPRAXIA_2019_Analysis
 from electron_diagnostic.electronDiagnostics import getLaxexSpectra
 import time

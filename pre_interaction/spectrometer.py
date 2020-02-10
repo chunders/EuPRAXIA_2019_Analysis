@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 
 # Spectrometer analysis.
 import sys
-sys.path.append("..")
+path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
+sys.path.append( path_to_git )
 import Functions3 as func
 from  select_best_gaussFit_class import select_Gaus_fit
 import pandas as pd

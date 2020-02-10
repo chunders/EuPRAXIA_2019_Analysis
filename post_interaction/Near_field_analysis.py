@@ -17,7 +17,8 @@ mpl.rcParams['figure.figsize'] = [8.0,6.0]
 import matplotlib.pyplot as plt
 
 import sys
-sys.path.append("..")
+path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
+sys.path.append( path_to_git )
 import Functions3 as func
 
 from skimage import io

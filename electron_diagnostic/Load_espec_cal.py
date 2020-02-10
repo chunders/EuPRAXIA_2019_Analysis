@@ -19,7 +19,8 @@ from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
 from scipy.optimize import curve_fit
 
 import sys
-sys.path.insert(0, "..")
+path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
+sys.path.append( path_to_git )
 import Functions3 as func
 
 

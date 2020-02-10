@@ -17,7 +17,8 @@ mpl.rcParams['figure.figsize'] = [8.0,6.0]
 import matplotlib.pyplot as plt
 
 import sys
-sys.path.append("..")
+path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
+sys.path.append( path_to_git )
 import Functions3 as func
 
 from skimage import io
@@ -39,7 +40,13 @@ class near_field_analysis():
         self.image = self.image[bot: top, left: right]
         
     def energy_in_beam(self ,energy_calibration):
-        energy = np.sum(self.image) * energy_calibration
+        if type(energy_calibration) == list:
+            m = energy_calibration[0]
+            c = energy_calibration[1]
+        else:
+            m = energy_calibration
+            c = 0
+        energy = np.sum(self.image) * m + c
         # print ("Energy in near field", energy)
         return energy
     

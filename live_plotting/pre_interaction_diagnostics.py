@@ -11,7 +11,8 @@ import sys
 sys.path.append("..\pre_interaction")
 from Near_field_analysis import near_field_analysis
 from FarField import focal_spot
-sys.path.append("..")
+path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
+sys.path.append( path_to_git )
 import Functions3 as func
 
 import time
