@@ -16,14 +16,16 @@ else:
     logFile = r'Z:\2019 EuPRAXIA\2019-12-05\Untitled.log'
 
 
+# Lower Limit and Upper limit of punisher zone in pixels
+lL = 1050
+uL = 1100
 
 diagList = ['Lanex']
 from livePlotting import getLastFileName, getRunFiles, imagesc
 import sys
-path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
-sys.path.append( path_to_git )
+sys.path.append("..")
 # C:\Users\laser\Documents\GitHub\EuPRAXIA_2019_Analysis
-from electron_diagnostic.electronDiagnostics import getLaxexSpectra
+from electron_diagnostic.electronDiagnostics import getRestrictedLaxexSpectra
 import time
 expPath = r'Z:\2019 EuPRAXIA'
 oldFilePath = ''
@@ -40,10 +42,10 @@ import argparse
 parser = argparse.ArgumentParser(description='Lower and Upper Charge')
 parser.add_argument('-l', '--lower', default=1e-3, type=float)
 parser.add_argument('-u', '--upper', default=2, type=float)
+parser.add_argument('-e', '--upperEnergy', default=2, type=float)
 args = parser.parse_args()
 
-upperEnergy = 275
-
+upperEnergy = args.upperEnergy
 
 
 maxCharge_pC = args.upper
@@ -76,7 +78,7 @@ while True:
             loopCounter = 0
             while loopCounter < 5:
                 try:
-                    eAxis_MeV, specList, file_dictionary = getLaxexSpectra(filePaths[0], file_dictionary)
+                    eAxis_MeV, specList, file_dictionary = getRestrictedLaxexSpectra(filePaths[0], lL,uL, file_dictionary)
                     loopCounter = 10
                 except PermissionError:
                     plt.pause(1)
@@ -115,7 +117,7 @@ while True:
             plt.ylim([y[0], upperEnergy])
             #im = plt.pcolormesh(x,y,lineoutImg)
            
-            plt.title("Electrons: " + runStr)
+            plt.title("On-Axis Electrons: " + runStr)
             print(os.path.split(filePathList[0][-1])[1])
             
             plt.sca(ax[1])
@@ -123,7 +125,7 @@ while True:
             plt.ylabel("Charge (pC)")
             plt.xlabel('Shot ')
             plt.tight_layout()
-            plt.savefig(expPath + '\\' + dateStr + '\\' + runStr + diagList[0] +  'quickAnalysis.png',
+            plt.savefig(expPath + '\\' + dateStr + '\\' + runStr + diagList[0] +  'OnAxis_quickAnalysis.png',
                  dpi = 150, bbox_inches='tight')            
             plt.show()
             

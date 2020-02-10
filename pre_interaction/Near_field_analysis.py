@@ -21,6 +21,7 @@ path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
 sys.path.append( path_to_git )
 import Functions3 as func
 
+
 from skimage import io
 
 class near_field_analysis():

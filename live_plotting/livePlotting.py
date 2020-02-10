@@ -31,7 +31,18 @@ def getLastFileName(logFile,expPath,diagList,returnDateRun=False):
     if lastShot is not np.nan:
         currentShot = lastShot
         currentRun = lastRun
-        dateStr = df['Date'].values[0]
+        # Rob has changed the index below from df['Date'].values[0] to [-1] to attempt
+        # solve the issue of the code failing when the data changes date folder after midnight
+        # The try except statements are to prevent getting nans or indexing out of range      
+        dateStr = df['Date'].values[-1]
+        try:
+            if np.isnan(dateStr):
+                try:
+                    dateStr = df['Date'].values[-2]
+                except:
+                    dateStr = df['Date'].values[0]
+        except:
+            dateStr = df['Date'].values[0]
         runStr = '%04i' % currentRun
         shotStr = '%04i' % currentShot
         for diagStr in diagList:
