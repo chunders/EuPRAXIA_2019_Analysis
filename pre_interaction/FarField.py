@@ -38,7 +38,8 @@ else:
 class focal_spot(): 
     #Takes the folder path and then the file name
     def __init__(self, filepath, calculations = True, simpleVersion =  True, 
-                 backgroundImage = None, plot_raw_input = True):
+                 backgroundImage = None, plot_raw_input = True, 
+                 plotCalcs = False):
         # The image should be a numpy array
         self.filepath = filepath
         self.load_image(backgroundImage)
@@ -49,7 +50,7 @@ class focal_spot():
             plt.show()
                     
         if calculations:
-            self.create_class_variables(simpleVersion)
+            self.create_class_variables(simpleVersion, plotting = plotCalcs )
             
 
     
@@ -60,12 +61,12 @@ class focal_spot():
             self.im = np.float64(self.im) -  np.float64(np.array(backgroundImage))
 
                         
-    def create_class_variables(self, simpleVersion =  True):
+    def create_class_variables(self, simpleVersion =  True, plotting = True):
         self.imShape = np.shape(self.im)
         self.background_subtraction()
         self.normalise()
 #        self.maxCoors = np.unravel_index(self.im.argmax(), self.im.shape)
-        self.Peaklocator(plotting = True, simpleVersion =  simpleVersion )
+        self.Peaklocator(plotting = plotting, simpleVersion =  simpleVersion )
         self.ThresholdImage()
         self.lineOutIntegrals()
         
@@ -78,13 +79,13 @@ class focal_spot():
         self.im_bg_n = (FS_im_bg * 1.0) / FS_im_bg.max()        
         
     def Peaklocator(self, plotting = False, simpleVersion = True):
-        plotting= True
         self.xlineout = self.im.sum(axis = 0)
         self.ylineout = self.im.sum(axis = 1)     
-        plt.plot(self.xlineout, label = 'x')
-        plt.plot(self.ylineout, label = 'y')
-        plt.legend()
-        plt.show()        
+        if plotting and False:
+            plt.plot(self.xlineout, label = 'x')
+            plt.plot(self.ylineout, label = 'y')
+            plt.legend()
+            plt.show()        
         
   
       # Find the max coors
@@ -99,8 +100,8 @@ class focal_spot():
                 yg = [self.ylineout.max(), len(self.ylineout) / 2, len(self.ylineout) / 4, self.ylineout.min()]
                 poptx, _ = curve_fit(func.gaus, x, self.xlineout, 
                                      p0 = xg,
-                                     bounds = ([-np.inf, 0, 1e-9, -np.inf],  
-                                               [np.inf, len(self.xlineout), np.inf, np.inf])
+                                      bounds = ([1e-9, 0, 1e-9, -np.inf],  
+                                                [np.inf, len(self.ylineout), np.inf, np.inf])                                     
                                      )
                 print ('poptx ',poptx)
                 
@@ -112,11 +113,11 @@ class focal_spot():
                                      ) 
                 print ('popty ',popty)                
                 self.maxCoors = [int(np.rint(poptx[1])), int(np.rint(popty[1]))]
-                if self.maxCoors[0] >= self.im.shape[0]:
-                    self.maxCoors[0] = self.im.shape[0] - 1
-                if self.maxCoors[1] >= self.im.shape[1]:
-                    self.maxCoors[1] = self.im.shape[1] - 1                    
-                peak =  [poptx[0], popty[0]]
+                if self.maxCoors[0] >= self.im.shape[1]:
+                    self.maxCoors[0] = self.im.shape[1] - 1
+                if self.maxCoors[1] >= self.im.shape[0]:
+                    self.maxCoors[1] = self.im.shape[0] - 1                    
+                # peak =  [poptx[0], popty[0]]
             except RuntimeError:
                 print ("Run time error")
                 print (xg, yg)
@@ -276,8 +277,11 @@ class focal_spot():
             maxCoors = np.array([crop_pixels_around_peak //2, crop_pixels_around_peak//2])
             guessWhole = False
             
-        # print ('In fit 2d gaus')
-        # print ('shape', shape, 'max coors', maxCoors)
+        
+            
+        print ('In fit 2d gaus')
+        print (crop_pixels_around_peak)
+        print ('shape', shape, 'max coors', maxCoors)
 
 
         self.umPerPixel = umPerPixel
@@ -289,12 +293,28 @@ class focal_spot():
             #               amplitude, xo, yo 
             initial_guess = [image.max(), maxCoors[1], maxCoors[0],
                          # sigma_x, sigma_y, theta, offset
-                         5, 5, 0, 0]
+                         50, 50, 0, 0]
         else:
             initial_guess = [image.max(), crop_pixels_around_peak, crop_pixels_around_peak,
                          # sigma_x, sigma_y, theta, offset
-                         5, 5, 0, 0]            
-        popt, pcov = curve_fit(self.twoD_Gaussian, (x, y), image.T.ravel(), p0=initial_guess)
+                         50, 50, 0, 0]           
+        print (initial_guess )
+            
+        bounds = ((1e-9,np.inf), # amplitude
+                   (0, np.inf), # xo
+                   (0, np.inf), # xo
+                   (1e-9,np.inf), # sigma_x
+                   (1e-9,np.inf), # sigma_y
+                   (-np.inf,np.inf), # theta
+                   (-np.inf,np.inf)  # offset
+                   )
+        bounds = (np.ones(7) * -np.inf, np.ones(7) * np.inf)
+        bounds = np.array(bounds).reshape((2,7))
+        print ("Pre Fitting")
+        popt, pcov = curve_fit(self.twoD_Gaussian, (x, y), image.T.ravel(), p0=initial_guess,                                        
+                                  bounds = bounds
+                                     )
+        print ("Post Fitting")        
         perr = func.pcov_to_perr(pcov)
         
         data_fitted = self.twoD_Gaussian((x, y), *popt)
