@@ -16,7 +16,7 @@ Created on Wed Mar 21 16:29:33 2018
     
     
 """
-
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.gridspec as gridspec
@@ -26,6 +26,7 @@ import sys
 path_to_git = "/Volumes/GoogleDrive/My Drive/2019_Lund/EuPRAXIA_2019_Analysis/"
 sys.path.append( path_to_git )
 import Functions3 as func
+from scipy.signal import peak_prominences
 
 
 imageRead = True
@@ -34,22 +35,23 @@ if imageRead:
 else:
     from PIL import Image
 
-
 class focal_spot(): 
     #Takes the folder path and then the file name
-    def __init__(self, filepath, calculations = True,
+    def __init__(self, filepath, calculations = True, simpleVersion =  True, 
                  backgroundImage = None, plot_raw_input = True):
         # The image should be a numpy array
         self.filepath = filepath
         self.load_image(backgroundImage)
-                    
-        if calculations:
-            self.create_class_variables()
-            
         if plot_raw_input:
-            plt.imshow(self.im)
+            r = self.im.max() - self.im.min()
+            plt.imshow(self.im, vmax =  self.im.min() + 0.4* r )
             plt.colorbar()
             plt.show()
+                    
+        if calculations:
+            self.create_class_variables(simpleVersion)
+            
+
     
     def load_image(self, backgroundImage):
         self.im = io.imread(self.filepath)    
@@ -58,12 +60,12 @@ class focal_spot():
             self.im = np.float64(self.im) -  np.float64(np.array(backgroundImage))
 
                         
-    def create_class_variables(self):
+    def create_class_variables(self, simpleVersion =  True):
         self.imShape = np.shape(self.im)
         self.background_subtraction()
         self.normalise()
 #        self.maxCoors = np.unravel_index(self.im.argmax(), self.im.shape)
-        self.Peaklocator()
+        self.Peaklocator(plotting = True, simpleVersion =  simpleVersion )
         self.ThresholdImage()
         self.lineOutIntegrals()
         
@@ -75,21 +77,75 @@ class focal_spot():
         FS_im_bg = (self.im - self.im.min())
         self.im_bg_n = (FS_im_bg * 1.0) / FS_im_bg.max()        
         
-    def Peaklocator(self, plotting = False):
-        self.ylineout = []
-        for im in self.im:
-            self.ylineout.append(sum(im))
-        self.xlineout = []
-        for im in self.im.T:
-            self.xlineout.append(sum(im))
-#        print self.maxCoors
-        self.maxCoors = [self.xlineout.index(max(self.xlineout)), 
-                         self.ylineout.index(max(self.ylineout))]
+    def Peaklocator(self, plotting = False, simpleVersion = True):
+        plotting= True
+        self.xlineout = self.im.sum(axis = 0)
+        self.ylineout = self.im.sum(axis = 1)     
+        plt.plot(self.xlineout, label = 'x')
+        plt.plot(self.ylineout, label = 'y')
+        plt.legend()
+        plt.show()        
+        
+  
+      # Find the max coors
+        if simpleVersion:
+            self.maxCoors = [self.xlineout.tolist().index(max(self.xlineout)), 
+                         self.ylineout.tolist().index(max(self.ylineout))]
+        else:
+            try:
+                # Fit to work out best position
+                x = np.arange(len(self.xlineout))
+                xg = [self.xlineout.max(), len(self.xlineout) / 2, len(self.xlineout) / 4, self.xlineout.min()]
+                yg = [self.ylineout.max(), len(self.ylineout) / 2, len(self.ylineout) / 4, self.ylineout.min()]
+                poptx, _ = curve_fit(func.gaus, x, self.xlineout, 
+                                     p0 = xg,
+                                     bounds = ([-np.inf, 0, 1e-9, -np.inf],  
+                                               [np.inf, len(self.xlineout), np.inf, np.inf])
+                                     )
+                print ('poptx ',poptx)
+                
+                y = np.arange(len(self.ylineout))
+                popty, _ = curve_fit(func.gaus, y, self.ylineout, 
+                                     p0 = yg,
+                                      bounds = ([1e-9, 0, 1e-9, -np.inf],  
+                                                [np.inf, len(self.ylineout), np.inf, np.inf])
+                                     ) 
+                print ('popty ',popty)                
+                self.maxCoors = [int(np.rint(poptx[1])), int(np.rint(popty[1]))]
+                if self.maxCoors[0] >= self.im.shape[0]:
+                    self.maxCoors[0] = self.im.shape[0] - 1
+                if self.maxCoors[1] >= self.im.shape[1]:
+                    self.maxCoors[1] = self.im.shape[1] - 1                    
+                peak =  [poptx[0], popty[0]]
+            except RuntimeError:
+                print ("Run time error")
+                print (xg, yg)
+                # print (poptx, popty)
+                assert False, "The peaks can't be found"
+            
+            
+            
         print("Maximum Coordinate (pixel nos): ", self.maxCoors)
         if plotting:
             plt.plot(range(len(self.ylineout)), self.ylineout)
-            plt.plot(range(len(self.xlineout)), self.xlineout)
+            plt.plot(range(len(self.xlineout)), self.xlineout)     
+            if not simpleVersion:
+                plt.plot(self.maxCoors[0], self.xlineout.max(), 's')
+                plt.plot(self.maxCoors[1], self.ylineout.max(), 's')            
             plt.show()
+
+        print (self.maxCoors)
+        # print (int(self.maxCoors[0]), int(self.maxCoors[1]))
+        x_prom = self.xlineout[int(self.maxCoors[0]) ] / np.average(self.xlineout)
+        y_prom = self.ylineout[int(self.maxCoors[1]) ] / np.average(self.ylineout)
+        print (x_prom)
+        print (y_prom)
+        # if not x_prom[0][0] > 0.7:
+        #      print("xpeak not promient", x_prom[0][0])
+        # if not y_prom[0][0] > 0.7:
+        #      print("ypeak not promient", y_prom[0][0])            
+        assert x_prom > 2, print("xpeak not promient", x_prom)
+        assert y_prom > 2, print("ypeak not promient", y_prom)
             
     def ThresholdImage(self):
         # Create an image thresholded to 50%
@@ -306,20 +362,8 @@ class focal_spot():
 ### Example run script    
 if __name__ == "__main__":
 
-    # folderPath = "/Volumes/GoogleDrive/My Drive/2019_Lund/Pre_plasma_diagnositc_calibration/"
-
-    # imagefilepath = folderPath  + "Far_field.tif"
-
-    # fs = focal_spot(image, plot_raw_input = False)    
-    # # fs.Peaklocator(True)
-
-    # umPerPixel = 2.575e-01
-    # fit = fs.fit_2DGaus(umPerPixel, crop_pixels_around_peak = 250)
-    # fs.createPlotWithLineOuts()
-
-    # print ("Dictionary of fit params")
-    # print (fit)
-    path_to_data = "/Volumes/Lund_York/"
+    path_to_data = "/Volumes/CIDU_passport/2019_Lund_Data/"
+    savePath = "/Volumes/CIDU_passport/2019_Lund_Analysis/"
     date = "2019-11-15/"
     run = "0001/"
     diagnostic = "Farfield pre/"
@@ -334,25 +378,55 @@ if __name__ == "__main__":
     umPerPixel = 2.575e-01 * 0.25
     
     out_dictionary = {}
-    for f in filelist[:]:
+    for f in filelist[5:7]:
         
         print (f)
         shot = f.split("_")[1]
         filepath = folder_path + f
-        try:
-            fs = FarField.focal_spot(filepath, plot_raw_input = False)  
-            fit = fs.fit_2DGaus(umPerPixel, crop_pixels_around_peak = 250)
-        except ValueError:
-            print ("Fitting has gone wrong")
+
+        try:            
+            fs = focal_spot(filepath, plot_raw_input = True, simpleVersion = False)  
+            nextStep = True
+        except AssertionError:
+            print ("The peaks are not prominent -> No focal spot")
             fit = {'amp': [np.nan, np.nan],
                  'xc': [np.nan, np.nan],
                  'yc': [np.nan, np.nan],
                  'sigma_x': [np.nan, np.nan],
                  'sigma_y': [np.nan, np.nan],
                  'theta': [np.nan, np.nan],
-                 'offset': [np.nan, np.nan]}
+                 'offset': [np.nan, np.nan]}   
+            nextStep = False                
+        if nextStep:
+            try:
+                fit = fs.fit_2DGaus(umPerPixel, crop_pixels_around_peak = 250)
+            except ValueError:
+                print ("Fitting has gone wrong")
+                fit = {'amp': [np.nan, np.nan],
+                     'xc': [np.nan, np.nan],
+                     'yc': [np.nan, np.nan],
+                     'sigma_x': [np.nan, np.nan],
+                     'sigma_y': [np.nan, np.nan],
+                     'theta': [np.nan, np.nan],
+                     'offset': [np.nan, np.nan]}
+                plt.imshow(fs.im, 
+                           # norm = mpl.colors.LogNorm() 
+                           )
+                plt.plot(fs.maxCoors[0], fs.maxCoors[1], 'rx', markersize = 15)
+                plt.colorbar()
+                plt.show()
+            
+                plt.imshow(fs.im, 
+                           # norm = mpl.colors.LogNorm() 
+                           )
+                plt.plot(fs.maxCoors[0], fs.maxCoors[1], 'rx', markersize = 15)
+                plt.colorbar()            
+                plt.show()
+            
         out_dictionary[shot] = fit
-    func.saveDictionary(path_to_data + date + run + diagnostic[:-1].replace(" ", "_") + "_extraction.json",
-                        out_dictionary)
+        print ('Completed', f, '\n')
+ 
+    # func.saveDictionary(savePath + date + run + diagnostic[:-1].replace(" ", "_") + "_extraction.json",
+    #                     out_dictionary)
         
 
