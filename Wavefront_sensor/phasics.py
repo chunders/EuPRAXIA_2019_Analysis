@@ -24,19 +24,23 @@ import Functions3 as func
 
 class wfs_zernlike():
     def __init__(self, filepath):
-        self.read_in_file(filepath)
+        self.data = self.read_in_file(filepath)
         
-    def read_in_file(self, filepath):
-        f = open(filepath, "r")
-        lines = f.readlines()
-        f.close()
-        # for i, l in enumerate(lines):
-        #     if i > 1:
-        #         print (l.split("\t"))
+    def read_in_file(self, filepath, printing = False):
+        with open(filepath, 'r', errors='ignore') as f:
+            lines = f.readlines()
+
         names = lines[2][:-1].split("\t")
         data = lines[3][:-1].split("\t")
-        print(names, data)
+        data = [dat.replace(",", ".") for dat in data]
         
+        data = np.array(data, dtype = float)
+        outDictionary = {}
+        for n, d in zip(names, data):
+            if printing: print ("{}\t{}".format(n, d))
+            outDictionary[n] = d
+            
+        return outDictionary
         
 if __name__ == "__main__":    
     path_to_data = "/Volumes/Lund_York/"
@@ -51,7 +55,7 @@ if __name__ == "__main__":
     filelist, shots = func.sortArrAbyB(filelist, shots)  
     
     for f in filelist[:1]:
-        
         print (f)    
         wfs = wfs_zernlike(folder_path + f)
+        print (wfs.data)
 
