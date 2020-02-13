@@ -22,15 +22,18 @@ sys.path.append( path_to_git )
 import Functions3 as func
 
 
-def locateShotFiles(root, day, run, diag):
+def locateShotFiles(root, day, run, diag, debug = False, fileEnding = ''):
     # print (day, run,  diag)
-    files = func.FilesInFolder(root + day + run + diag, "")
-    files = sorted(files, key = lambda x : int(x.split("_")[0])*1e4 + int(x.split("_")[1])  )
-    # print ("Files:")
-    # print (files)
-    # print ()
+    files = func.FilesInFolder(root + day + run + diag, fileEnding)
+    if debug: print(files)
+    try:
+        files = sorted(files, key = lambda x : int(x.split("_")[0])*1e4 + int(x.split("_")[1])  )
+    except:
+        print ("Files cannot be sorted easily")
+    if debug: print(files)
     for i, f in enumerate(files):
         files[i] = root + day + run + diag + f
+    if debug: print(files)        
     return files
     
 

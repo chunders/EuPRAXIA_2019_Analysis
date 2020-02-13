@@ -360,10 +360,12 @@ class focal_spot():
             if tf1:
                 out, err = np.array([out, err]) * self.umPerPixel
                 if type(tf2) == str and crop_pixels_around_peak:
+                    # Should this be * self.umPerPixel
+                    # maxCoors is in pixels.
                     if tf2 == 'x':
-                        out += self.maxCoors[0]
+                        out += self.maxCoors[0] * self.umPerPixel
                     elif tf2 == 'y':
-                        out += self.maxCoors[1]
+                        out += self.maxCoors[1] * self.umPerPixel
 
             print ("{}\t\t{:2.2f} +/- {:1.2f}".format(n, out, err))
             out_dict[nd] = [out, err]
