@@ -261,7 +261,7 @@ class focal_spot():
     
 
     def fit_2DGaus(self,umPerPixel, plotting = True, view_n_std = 4, 
-                   crop_pixels_around_peak = False):
+                   crop_pixels_around_peak = False, xcyxInPixels = True):
         ''' crop_pixels_around_peak should be replaced with the number of pixels to crop by
         '''
         
@@ -339,7 +339,17 @@ class focal_spot():
             plt.show()
 
         print ("Fit Params:")
-        names = ["amplitude", "xo [um]   ", "yo [um]   ", "sigma_x [um]", "sigma_y [um]", "theta    ", "offset    "]
+        if xcyxInPixels:
+            names = ["amplitude", "xo [pixels]   ", "yo [pixels]   ", "sigma_x [um]", "sigma_y [um]", "theta    ", "offset    "]
+            TF = [False, False, False, True, True, False, False]
+            TF1 = [False, False, False, True, True, False, False]
+            TF2 = [False, 'x', 'y', False, False, False, False]     
+        else:
+            names = ["amplitude", "xo [um]   ", "yo [um]   ", "sigma_x [um]", "sigma_y [um]", "theta    ", "offset    "]
+            TF = [False, True, True, True, True, False, False]
+            TF1 = [False, True, True, True, True, False, False]
+            TF2 = [False, 'x', 'y', False, False, False, False]            
+
         dnames = ["amp", "xc", "yc", "sigma_x", "sigma_y", "theta", "offset"]        
         TF = [False, True, True, True, True, False, False]
         out_dict= {}
@@ -350,21 +360,26 @@ class focal_spot():
             out_dict[nd] = [out, err]
         
         print ("Fit Params:")
-        names = ["amplitude", "xo [um]   ", "yo [um]   ", "sigma_x [um]", "sigma_y [um]", "theta    ", "offset    "]
-        dnames = ["amp", "xc", "yc", "sigma_x", "sigma_y", "theta", "offset"]        
-        TF1 = [False, True, True, True, True, False, False]
-        TF2 = [False, 'x', 'y', False, False, False, False]
+
+
 
         out_dict= {}
         for n, nd, out, err, tf1, tf2 in zip(names, dnames, popt, perr, TF1, TF2):
             if tf1:
                 out, err = np.array([out, err]) * self.umPerPixel
-                if type(tf2) == str and crop_pixels_around_peak:
-                    # Should this be * self.umPerPixel
-                    # maxCoors is in pixels.
-                    if tf2 == 'x':
+
+            if type(tf2) == str and crop_pixels_around_peak:
+                # Should this be * self.umPerPixel
+                # maxCoors is in pixels.
+                if tf2 == 'x':
+                    if xcyxInPixels:
+                        out += self.maxCoors[0]
+                    else:
                         out += self.maxCoors[0] * self.umPerPixel
-                    elif tf2 == 'y':
+                elif tf2 == 'y':
+                    if xcyxInPixels:
+                        out += self.maxCoors[1]
+                    else:
                         out += self.maxCoors[1] * self.umPerPixel
 
             print ("{}\t\t{:2.2f} +/- {:1.2f}".format(n, out, err))
